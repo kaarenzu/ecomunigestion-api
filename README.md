@@ -1,7 +1,7 @@
 # EcoMuniGestion-Api
 
 ## Descripción del proyecto
-Este proyecto es el backend del proyecto de titulación EcoMuniGestion el cual permite conectar el frontend con la base de datos. Proporciona endpoints para gestionar reportes de problemas ambientales y de infraestructura a nivel municipal.
+Este proyecto es el backend del proyecto de titulación EcoMuniGestion el cual permite conectar el frontend con la base de datos. Proporciona endpoints para gestionar reportes de problemas ambientales y de infraestructura, gestión de usuarios y análisis de dashboards a nivel municipal.
 
 ---
 
@@ -18,13 +18,19 @@ ecomunigestion-api/
 │  ├─ config/
 │  │  └─ database.js
 │  ├─ controllers/
-│  │  └─ reporte.controller.js
+│  │  ├─ reporte.controller.js
+│  │  ├─ usuario.controller.js
+│  │  └─ dashboard.controller.js
 │  ├─ models/
 │  │  └─ reporte.model.js
 │  ├─ routes/
-│  │  └─ reporte.routes.js
+│  │  ├─ reporte.routes.js
+│  │  ├─ usuario.routes.js
+│  │  └─ dashboard.routes.js
 │  └─ services/
-│     └─ reporte.service.js
+│     ├─ reporte.service.js
+│     ├─ usuario.service.js
+│     └─ dashboard.service.js
 ```
 
 ---
@@ -38,18 +44,112 @@ ecomunigestion-api/
   - **`app.js`** — Configuración de la app (middlewares, rutas).
   - **`server.js`** — Punto de entrada / arranque del servidor.
   - **`config/database.js`** — Configuración de la base de datos MySQL.
-  - **`controllers/`** — Lógica de controladores (gestión de reportes).
+  - **`controllers/`** — Lógica de controladores (3 módulos: reportes, usuarios, dashboard).
   - **`models/`** — Modelos y consultas a la BD.
-  - **`routes/`** — Definición de rutas de la API.
-  - **`services/`** — Lógica de negocio y validaciones.
+  - **`routes/`** — Definición de rutas de la API (3 módulos).
+  - **`services/`** — Lógica de negocio y validaciones (3 módulos).
 
 ---
 
-## Instalación y configuración
+## 🗄️ Configuración de Base de Datos
+
+### Requisitos previos
+- MySQL 5.7 o superior instalado
+- Acceso como usuario `root` en MySQL
+
+### Paso 1: Crear la base de datos
+
+Conéctate a MySQL con usuario root y ejecuta:
+
+```sql
+CREATE DATABASE ecomunigestion
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_general_ci;
+```
+
+**Explicación:**
+- `CHARACTER SET utf8mb4` — Soporte completo para caracteres especiales y emojis
+- `COLLATE utf8mb4_general_ci` — Collation general, sin distinción de mayúsculas/minúsculas
+
+---
+
+### Paso 2: Crear usuario de proyecto
+
+```sql
+CREATE USER 'eco_user'@'localhost'
+IDENTIFIED BY 'EcoMuni2025!';
+```
+
+**Detalles del usuario:**
+- **Usuario:** `eco_user`
+- **Host:** `localhost` — Solo acceso local (mayor seguridad)
+- **Contraseña:** `EcoMuni2025!` — Contraseña académica clara y segura
+
+---
+
+### Paso 3: Otorgar permisos específicos
+
+```sql
+GRANT ALL PRIVILEGES
+ON ecomunigestion.*
+TO 'eco_user'@'localhost';
+```
+
+**Permisos otorgados:**
+- Crear tablas
+- Insertar datos
+- Consultar datos
+- Actualizar registros
+- Eliminar registros
+- **Restricción:** Solo dentro de la BD `ecomunigestion`, no puede tocar otras bases de datos
+
+---
+
+### Paso 4: Aplicar cambios
+
+```sql
+FLUSH PRIVILEGES;
+```
+
+Este comando recarga los permisos en MySQL para que entren en vigor inmediatamente.
+
+---
+
+### Paso 5: Configurar conexión en MySQL Workbench
+
+1. **Abrir MySQL Workbench**
+2. **Crear nueva conexión:**
+   - **Connection Name:** `EcoMuniGestion DB`
+   - **Hostname:** `localhost`
+   - **Port:** `3306` (por defecto)
+   - **Username:** `eco_user`
+   - **Password:** Almacenar en Vault (contraseña: `EcoMuni2025!`)
+
+3. **Guardar y probar la conexión**
+
+---
+
+### Paso 6: Configurar variables de entorno (.env)
+
+Crea un archivo `.env` en la raíz del proyecto:
+
+```env
+DB_HOST=localhost
+DB_USER=eco_user
+DB_PASSWORD=EcoMuni2025!
+DB_NAME=ecomunigestion
+DB_PORT=3306
+PORT=3000
+NODE_ENV=development
+```
+
+---
+
+## Instalación y configuración de la API
 
 ### Requisitos
 - Node.js (v14 o superior)
-- MySQL (v5.7 o superior)
+- MySQL (v5.7 o superior, base de datos ya creada)
 - npm o yarn
 
 ### Instalación
@@ -65,30 +165,29 @@ ecomunigestion-api/
    npm install
    ```
 
-3. **Crear archivo `.env`** en la raíz del proyecto
-   ```env
-   DB_HOST=localhost
-   DB_USER=root
-   DB_PASSWORD=tu_contraseña
-   DB_NAME=ecomunigestion
-   PORT=3000
-   ```
+3. **Crear archivo `.env`** en la raíz del proyecto (ver paso 6 arriba)
 
 4. **Ejecutar en modo desarrollo**
    ```bash
    npm run dev
    ```
 
+   La API estará disponible en: `http://localhost:3000`
+
 ---
 
-## Endpoints de la API
+## 📡 Endpoints de la API
 
 ### Base URL
 ```
-http://localhost:3000/api/reportes
+http://localhost:3000/api
 ```
 
 ---
+
+## 📋 Módulo: REPORTES
+
+**Base:** `/api/reportes`
 
 ### 1️⃣ Crear un nuevo reporte
 
@@ -165,7 +264,7 @@ http://localhost:3000/api/reportes
 
 **Ejemplo:**
 ```
-GET /usuario/usuario@example.com
+GET /reportes/usuario/usuario@example.com
 ```
 
 **Response (200 OK):**
@@ -196,7 +295,7 @@ GET /usuario/usuario@example.com
 
 **Ejemplo:**
 ```
-GET /1
+GET /reportes/1
 ```
 
 **Response (200 OK):**
@@ -286,6 +385,161 @@ GET /1
 
 ---
 
+## 👤 Módulo: USUARIOS
+
+**Base:** `/api/usuarios`
+
+### 7️⃣ Registrar nuevo usuario
+
+**Endpoint:** `POST /registro`
+
+**Descripción:** Registra un nuevo usuario en el sistema con su rol asignado.
+
+**Body (JSON):**
+```json
+{
+  "email": "juan@municipalidad.cl",
+  "rol": "funcionario"
+}
+```
+
+**Roles disponibles:**
+- `ciudadano` — Usuario ciudadano que reporta problemas
+- `funcionario` — Funcionario municipal que gestiona reportes
+- `admin` — Administrador del sistema
+
+**Response (201 Created):**
+```json
+{
+  "id_usuario": 5,
+  "email": "juan@municipalidad.cl",
+  "rol": "funcionario",
+  "fecha_registro": "2026-01-19T10:45:00Z",
+  "message": "Usuario registrado exitosamente"
+}
+```
+
+---
+
+### 8️⃣ Obtener rol de usuario
+
+**Endpoint:** `GET /rol/:email`
+
+**Descripción:** Obtiene el rol asignado a un usuario específico.
+
+**Parámetro:**
+- `email` (string): Email del usuario
+
+**Ejemplo:**
+```
+GET /usuarios/rol/juan@municipalidad.cl
+```
+
+**Response (200 OK):**
+```json
+{
+  "rol": "funcionario"
+}
+```
+
+---
+
+## 📊 Módulo: DASHBOARD
+
+**Base:** `/api/dashboard`
+
+### 9️⃣ Obtener KPIs
+
+**Endpoint:** `GET /kpis`
+
+**Descripción:** Obtiene indicadores clave de desempeño (KPIs) del sistema.
+
+**Response (200 OK):**
+```json
+{
+  "total_reportes": 145,
+  "reportes_pendientes": 23,
+  "reportes_en_proceso": 67,
+  "reportes_resueltos": 55,
+  "porcentaje_resolucion": 37.93,
+  "tiempo_promedio_resolucion_dias": 5.2
+}
+```
+
+---
+
+### 🔟 Obtener reportes por sector
+
+**Endpoint:** `GET /reportes-por-sector`
+
+**Descripción:** Agrupa y cuenta los reportes por sector geográfico o categoría.
+
+**Response (200 OK):**
+```json
+[
+  {
+    "sector": "Centro histórico",
+    "cantidad_reportes": 45,
+    "porcentaje": 31.03
+  },
+  {
+    "sector": "Sector norte",
+    "cantidad_reportes": 32,
+    "porcentaje": 22.07
+  },
+  {
+    "sector": "Sector sur",
+    "cantidad_reportes": 28,
+    "porcentaje": 19.31
+  },
+  {
+    "sector": "Sector oriente",
+    "cantidad_reportes": 40,
+    "porcentaje": 27.59
+  }
+]
+```
+
+---
+
+### 1️⃣1️⃣ Obtener zonas críticas
+
+**Endpoint:** `GET /zonas-criticas`
+
+**Descripción:** Identifica y obtiene las zonas con mayor concentración de problemas reportados.
+
+**Response (200 OK):**
+```json
+[
+  {
+    "zona": "Parque Central",
+    "cantidad_reportes": 18,
+    "categoria_predominante": "ambiental",
+    "latitude": "-33.4372",
+    "longitude": "-70.6688",
+    "nivel_critico": "Alto"
+  },
+  {
+    "zona": "Avenida Principal",
+    "cantidad_reportes": 15,
+    "categoria_predominante": "infraestructura",
+    "latitude": "-33.4385",
+    "longitude": "-70.6705",
+    "nivel_critico": "Alto"
+  },
+  {
+    "zona": "Calle Secundaria",
+    "cantidad_reportes": 12,
+    "categoria_predominante": "ambiental",
+    "latitude": "-33.4395",
+    "longitude": "-70.6720",
+    "nivel_critico": "Medio"
+  }
+]
+```
+
+---
+
 ## Códigos de respuesta HTTP
 
 | Código | Significado |
@@ -320,19 +574,24 @@ curl -X POST http://localhost:3000/api/reportes/crear \
 curl http://localhost:3000/api/reportes/
 ```
 
-### Obtener reporte por ID
+### Registrar usuario
 ```bash
-curl http://localhost:3000/api/reportes/1
-```
-
-### Cambiar estado
-```bash
-curl -X PUT http://localhost:3000/api/reportes/1/estado \
+curl -X POST http://localhost:3000/api/usuarios/registro \
   -H "Content-Type: application/json" \
   -d '{
-    "id_estado": 2,
-    "id_usuario_funcionario": 5
+    "email": "juan@municipalidad.cl",
+    "rol": "funcionario"
   }'
+```
+
+### Obtener KPIs del dashboard
+```bash
+curl http://localhost:3000/api/dashboard/kpis
+```
+
+### Obtener zonas críticas
+```bash
+curl http://localhost:3000/api/dashboard/zonas-criticas
 ```
 
 ---
@@ -355,14 +614,30 @@ npm test       # Ejecutar pruebas (no configurado aún)
 
 ---
 
-## Notas importantes
+## Notas importantes para el profesor
 
-- Asegúrate de configurar correctamente las variables de entorno en el archivo `.env`
+✅ **Seguridad:**
+- Contraseña de `eco_user` clara y comprensible: `EcoMuni2025!`
+- Usuario con permisos limitados solo a la BD `ecomunigestion`
+- No puede acceder a otras bases de datos del servidor
+- Almacenar contraseña en Vault de MySQL Workbench
+
+✅ **Variables de entorno:**
+- Asegúrate de configurar correctamente el archivo `.env` con los datos de conexión
+- No compartir `.env` en repositorios públicos
+
+✅ **Base de datos:**
+- La API utiliza MySQL con charset UTF-8MB4 para soporte completo de caracteres
+- Todos los timestamps se almacenan automáticamente
+- Los reportes se relacionan con usuarios por email
+
+✅ **API:**
 - La API utiliza CORS para permitir solicitudes desde el frontend
-- Todos los endpoints de modificación requieren autenticación del funcionario
-- Los reportes se almacenan en MySQL con timestamps automáticos
+- Endpoints organizados en 3 módulos: reportes, usuarios, dashboard
+- Errores con mensajes descriptivos para facilitar debugging
 
 ---
 
 ## Autor
-Proyecto de titulación - EcoMuniGestion 2025
+Proyecto de titulación - EcoMuniGestion 2026
+Karen Zúñiga Cortés
