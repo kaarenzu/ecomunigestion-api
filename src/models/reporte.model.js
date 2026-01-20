@@ -24,32 +24,34 @@ exports.crearUsuario = async (data) => {
 exports.crearReporte = async (reporte) => {
     const [result] = await pool.query(
         `
-    INSERT INTO reporte
-    (
-      titulo,
-      descripcion,
-      fecha_creacion,
-      prioridad,
-      imagen_url,
-      id_usuario,
-      id_sector,
-      id_tipo_problema,
-      id_estado
-    )
-    VALUES (?, ?, NOW(), NULL, NULL, ?, ?, ?, ?)
-    `,
+        INSERT INTO reporte
+        (
+          titulo,
+          descripcion,
+          fecha_creacion,
+          prioridad,
+          imagen_url,
+          id_usuario,
+          id_sector,
+          id_tipo_problema,
+          id_estado
+        )
+        VALUES (?, ?, NOW(), ?, NULL, ?, ?, ?, ?)
+        `,
         [
             reporte.titulo,
             reporte.descripcion,
+            reporte.prioridad,      // 👈 AHORA VIENE DESDE EL SERVICE
             reporte.id_usuario,
             reporte.id_sector,
             reporte.id_tipo_problema,
-            1
+            1                        // PENDIENTE
         ]
     );
 
     return result.insertId;
 };
+
 
 /**Función para listar reportes por usuario */
 exports.listarReportesPorUsuario = async (idUsuario) => {
@@ -60,6 +62,7 @@ exports.listarReportesPorUsuario = async (idUsuario) => {
       r.titulo,
       r.descripcion,
       r.fecha_creacion,
+      r.prioridad,
       e.nombre_estado AS estado,
       s.nombre_sector AS sector,
       tp.nombre_tipo AS tipo_problema
@@ -85,6 +88,7 @@ exports.obtenerReportePorId = async (idReporte) => {
       r.titulo,
       r.descripcion,
       r.fecha_creacion,
+      r.prioridad,
       e.nombre_estado AS estado,
       s.nombre_sector AS sector,
       tp.nombre_tipo AS tipo_problema
@@ -129,6 +133,7 @@ exports.listarTodos = async () => {
       r.titulo,
       r.descripcion,
       r.fecha_creacion,
+      r.prioridad,
       e.nombre_estado AS estado,
       s.nombre_sector AS sector,
       tp.nombre_tipo AS tipo_problema,
@@ -155,10 +160,10 @@ exports.obtenerReporteSimplePorId = async (idReporte) => {
     );
     return rows[0];
 };
-exports.actualizarEstadoReporte = async (idReporte, idEstado) => {
+exports.actualizarEstadoYPrioridad = async (idReporte, idEstado, prioridad) => {
     await pool.query(
-        'UPDATE reporte SET id_estado = ? WHERE id_reporte = ?',
-        [idEstado, idReporte]
+        'UPDATE reporte SET id_estado = ?, prioridad = ? WHERE id_reporte = ?',
+        [idEstado, prioridad, idReporte]
     );
 };
 exports.insertarHistorialEstado = async (historial) => {

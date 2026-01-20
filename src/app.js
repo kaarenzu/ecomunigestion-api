@@ -12,5 +12,10 @@ app.use('/api/reportes', reporteRoutes);
 const dashboardRoutes = require('./routes/dashboard.routes');
 app.use('/api/dashboard', dashboardRoutes);
 
+const usuarioRoutes = require("./routes/usuario.routes");
+
+app.use("/api/usuarios", usuarioRoutes);
+
+
 
 module.exports = app;

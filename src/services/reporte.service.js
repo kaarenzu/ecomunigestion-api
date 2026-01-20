@@ -34,7 +34,8 @@ exports.crearReporte = async (data) => {
         descripcion: data.descripcion,
         id_usuario: usuario.id_usuario,
         id_sector: data.id_sector,
-        id_tipo_problema: data.id_tipo_problema
+        id_tipo_problema: data.id_tipo_problema,
+        prioridad: 'ALTA' // estado inicial = PENDIENTE
     });
 
     return {
@@ -80,15 +81,24 @@ exports.listarTodos = async () => {
 };
 
 /**Función para cambiar el estado de un reporte */
-exports.cambiarEstado = async (idReporte, idEstado, idFuncionario) => {
-    if (!idReporte || !idEstado || !idFuncionario) {
+exports.cambiarEstado = async (idReporte, idEstado, emailFuncionario) => {
+    if (!idReporte || !idEstado || !emailFuncionario) {
         throw new Error('Datos incompletos para cambiar estado');
     }
 
+    // Se obtiene el reporte que será modificado
     const reporte = await reporteModel.obtenerReporteSimplePorId(idReporte);
     if (!reporte) {
         throw new Error('Reporte no encontrado');
     }
+
+    // 🔑 1. Resolver funcionario por email
+    const funcionario = await reporteModel.obtenerUsuarioPorEmail(emailFuncionario);
+    if (!funcionario) {
+        throw new Error('Funcionario no encontrado');
+    }
+
+    const idFuncionario = funcionario.id_usuario;
 
     const estadoActual = await reporteModel.obtenerEstadoActualReporte(idReporte);
 
@@ -98,7 +108,17 @@ exports.cambiarEstado = async (idReporte, idEstado, idFuncionario) => {
         };
     }
 
-    await reporteModel.actualizarEstadoReporte(idReporte, idEstado);
+    let prioridad;
+
+    if (idEstado === 1) prioridad = 'ALTA';
+    else if (idEstado === 2) prioridad = 'MEDIA';
+    else prioridad = 'BAJA';
+
+    await reporteModel.actualizarEstadoYPrioridad(
+        idReporte,
+        idEstado,
+        prioridad
+    );
 
     await reporteModel.insertarHistorialEstado({
         id_reporte: idReporte,
@@ -111,8 +131,8 @@ exports.cambiarEstado = async (idReporte, idEstado, idFuncionario) => {
     };
 };
 
-exports.agregarObservacion = async (idReporte, texto, idFuncionario) => {
-    if (!idReporte || !texto || !idFuncionario) {
+exports.agregarObservacion = async (idReporte, texto, emailFuncionario) => {
+    if (!idReporte || !texto || !emailFuncionario) {
         throw new Error('Datos incompletos para agregar observación');
     }
 
@@ -120,6 +140,12 @@ exports.agregarObservacion = async (idReporte, texto, idFuncionario) => {
     if (!reporte) {
         throw new Error('Reporte no encontrado');
     }
+
+    const funcionario = await reporteModel.obtenerUsuarioPorEmail(emailFuncionario);
+    if (!funcionario) {
+        throw new Error('Funcionario no encontrado');
+    }
+    const idFuncionario = funcionario.id_usuario;
 
     await reporteModel.insertarObservacion({
         id_reporte: idReporte,
@@ -130,4 +156,20 @@ exports.agregarObservacion = async (idReporte, texto, idFuncionario) => {
     return {
         message: 'Observación agregada correctamente'
     };
+};
+
+exports.registrarSiNoExiste = async (email, rol) => {
+    let usuario = await usuarioModel.obtenerUsuarioPorEmail(email);
+
+    if (usuario) return usuario;
+
+    const idRol = rol === "FUNCIONARIO" ? 2 : 1;
+
+    const idUsuario = await usuarioModel.crearUsuario({
+        email,
+        nombre: email.split("@")[0],
+        id_rol: idRol
+    });
+
+    return { id_usuario: idUsuario, email, rol };
 };

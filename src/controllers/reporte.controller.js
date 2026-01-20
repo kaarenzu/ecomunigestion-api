@@ -45,12 +45,12 @@ exports.listarTodos = async (req, res) => {
 exports.cambiarEstado = async (req, res) => {
     try {
         const { id_reporte } = req.params;
-        const { id_estado, id_usuario_funcionario } = req.body;
+        const { id_estado, email_funcionario } = req.body;
 
         const resultado = await reporteService.cambiarEstado(
             id_reporte,
             id_estado,
-            id_usuario_funcionario
+            email_funcionario
         );
 
         res.status(200).json(resultado);
@@ -62,12 +62,12 @@ exports.cambiarEstado = async (req, res) => {
 exports.agregarObservacion = async (req, res) => {
     try {
         const { id_reporte } = req.params;
-        const { observacion, id_usuario_funcionario } = req.body;
+        const { observacion, email_funcionario } = req.body;
 
         const resultado = await reporteService.agregarObservacion(
             id_reporte,
             observacion,
-            id_usuario_funcionario
+            email_funcionario
         );
 
         res.status(201).json(resultado);
